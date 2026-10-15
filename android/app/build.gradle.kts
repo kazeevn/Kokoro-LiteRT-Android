@@ -44,8 +44,10 @@ android {
 }
 
 dependencies {
-    // LiteRT Interpreter API: XNNPACK on CPU, NNAPI delegate for the Tensor G3 EdgeTPU.
-    // (LiteRT 2.x's CompiledModel NPU path needs Google's EdgeTPU app allowlist on Pixel.)
-    implementation("com.google.ai.edge.litert:litert:1.4.2")
+    // LiteRT CompiledModel API: XNNPACK on CPU; on the Tensor G3 EdgeTPU, models AOT-compiled with
+    // the Google Tensor SDK run through the Google Tensor dispatch library (no on-device compile,
+    // so no EdgeTPU app allowlist).
+    implementation("com.google.ai.edge.litert:litert:2.3.0")
+    implementation("com.google.ai.edge.litert:litert-npu-runtime-google-tensor:2.3.0")
     testImplementation("junit:junit:4.13.2")
 }

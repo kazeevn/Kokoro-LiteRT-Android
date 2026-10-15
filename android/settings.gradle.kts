@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "KokoroTTS"
 include(":app")
 include(":nnprobe")
+include(":aotprobe")

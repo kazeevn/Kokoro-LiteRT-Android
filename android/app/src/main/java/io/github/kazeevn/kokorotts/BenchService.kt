@@ -58,7 +58,7 @@ class BenchService : Service() {
             try {
                 if (mode == "compare") {
                     // NPU vs CPU decoder on identical inputs: two passes with the same chunking
-                    // (CPU capped at the NPU's 128 frames), so both decoders are never loaded at once.
+                    // (CPU capped at the NPU's largest bucket), so both decoders are never loaded at once.
                     val engine = KokoroEngine.get(this)
                     val corpus = assets.open("bench_corpus.txt").bufferedReader().readText()
                     fun pass(): List<FloatArray> {
@@ -66,19 +66,27 @@ class BenchService : Service() {
                         engine.synthesize(corpus, voice, 1f, AtomicBoolean(false)) { chunks.add(it.audio); true }
                         return chunks
                     }
+                    io.github.kazeevn.kokorotts.engine.Graph.checkOutputs = intent?.getBooleanExtra("check", false) ?: false
+                    io.github.kazeevn.kokorotts.engine.Graph.dumpDir = getExternalFilesDir("dump")
                     engine.preferredBackend = Backend.NPU
                     check(engine.prepareNpu()) { engine.npuState }
                     engine.warmUp(false)
                     val npu = pass()
                     engine.releaseNpu()
                     engine.preferredBackend = Backend.CPU
-                    engine.frameCap = 128
+                    engine.frameCap = engine.npuMaxFrames
                     engine.warmUp(false)
                     val cpu = pass()
                     engine.frameCap = 0
                     check(npu.size == cpu.size) { "chunking differs: ${npu.size} vs ${cpu.size}" }
                     val arr = JSONArray()
-                    for (i in npu.indices) arr.put(JSONArray(engine.compare(cpu[i], npu[i]).toList()))
+                    for (i in npu.indices) {
+                        val r = engine.compare(cpu[i], npu[i])
+                        val bad = npu[i].count { !it.isFinite() } to cpu[i].count { !it.isFinite() }
+                        Log.i("KokoroBench", "chunk $i: ${npu[i].size} samples, snr ${r[0]} dB, " +
+                            "logspec corr ${r[1]}, non-finite npu/cpu ${bad.first}/${bad.second}")
+                        arr.put(JSONArray(r.map { if (it.isFinite()) it else JSONObject.NULL }))
+                    }
                     out.put("snr_db_and_logspec_corr", arr)
                 } else if (mode == "idle") {
                     val t0 = now(); Thread.sleep(idleS * 1000L)
@@ -91,7 +99,7 @@ class BenchService : Service() {
                     out.put("cpu_threads", threads).put("cpu_fp16", fp16)
                     engine.preferredBackend = backend
                     val tPrep = now()
-                    if (backend == Backend.NPU) check(engine.prepareNpu()) { "NPU compile failed: ${engine.npuState}" }
+                    if (backend == Backend.NPU) check(engine.prepareNpu()) { "NPU load failed: ${engine.npuState}" }
                     else engine.releaseNpu()
                     engine.warmUp(engine.isBritish(voice))
                     val corpus = assets.open("bench_corpus.txt").bufferedReader().readText()

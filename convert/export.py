@@ -47,6 +47,10 @@ def sample_inputs(graph, n):
         return (f(1, 1024, n), f(1, 512, n), f(1, 4, n), m(n), m(2 * n), ref_s)
     if st == "g0":
         return (f(1, 512, 2 * n), f(1, 24, H, 480), m(H, 8), m(H, 80), ref_s)
+    if st == "g0s":
+        return (f(1, 24, H, 480), m(H, 80), ref_s)
+    if st == "g0u":
+        return (f(1, 512, 2 * n), f(1, 256, H, 80), m(H, 80))
     if st and st.startswith("rb0"):
         return (f(1, 256, H, 80), m(H, 80), ref_s)
     # distinct tensors per input: torch.export merges aliased sample inputs into one placeholder

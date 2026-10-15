@@ -23,7 +23,7 @@ class ChunkStats(val tokens: Int, val frames: Int, val bucket: Int, val ms: Map<
 /**
  * Kokoro-82M on LiteRT, split into static-shape graphs (see convert/kokoro_graphs.py):
  * text (token buckets) -> host alignment -> f0n -> host hn-NSF source + STFT ->
- * decoder stages (frame buckets; CPU via XNNPACK or EdgeTPU via NNAPI) -> host iSTFT.
+ * decoder stages (frame buckets; CPU via XNNPACK or AOT-compiled for the EdgeTPU) -> host iSTFT.
  */
 class KokoroEngine private constructor(private val context: Context) {
     private val assets = context.assets
@@ -35,6 +35,7 @@ class KokoroEngine private constructor(private val context: Context) {
     val frameBuckets = meta.getJSONArray("frame_buckets").let { a -> IntArray(a.length()) { a.getInt(it) } }
     /** The EdgeTPU decoder only handles chunks up to the largest of these (see export_all.py). */
     private val npuFrameBuckets = meta.getJSONArray("npu_frame_buckets").let { a -> IntArray(a.length()) { a.getInt(it) } }
+    val npuMaxFrames get() = npuFrameBuckets.last()
 
     /** Optional cap on frames per chunk (e.g. to run the CPU with the NPU's chunking). */
     @Volatile var frameCap: Int = 0
@@ -79,8 +80,8 @@ class KokoroEngine private constructor(private val context: Context) {
 
     private fun cpuGraph(name: String): Graph {
         val tag = if (cpuFp16) "fp16" else "fp32"
-        return Graph(assets, name, Backend.CPU, cpuThreads, File(xnnCacheDir, "$name.$tag.xnn"),
-            if (cpuFp16) XnnpackDelegate.FLAG_FORCE_FP16 else 0)
+        return Graph(context, name, Backend.CPU, cpuThreads, File(xnnCacheDir, "$name.$tag.xnn"),
+            if (cpuFp16) Graph.XNN_FLAG_FORCE_FP16 else 0)
     }
 
     /** Applies CPU tuning, dropping CPU graphs built with other settings. */
@@ -98,7 +99,7 @@ class KokoroEngine private constructor(private val context: Context) {
     @Volatile var npuState: String = "not loaded"
         private set
 
-    /** Backend the decoder should use; NPU falls back to CPU until its graphs are compiled. */
+    /** Backend the decoder should use; NPU falls back to CPU until its graphs are loaded. */
     @Volatile var preferredBackend: Backend = Backend.CPU
 
     val activeDecoderBackend: Backend get() =
@@ -106,25 +107,36 @@ class KokoroEngine private constructor(private val context: Context) {
 
     // ---------------------------------------------------------------- loading
 
-    /** EdgeTPU decoder: TPU-sized, row-folded stage graphs + last-rate row-block graphs. */
-    private fun loadNpuDecoder(): Map<String, Graph> =
-        decStages.associateWith { Graph(assets, "dec_$it", Backend.NPU, THREADS) } +
-            finalBlocks.associate { "blk_$it" to Graph(assets, "blk_$it", Backend.NPU, THREADS) }
+    /**
+     * EdgeTPU decoder: TPU-sized, row-folded stage graphs + last-rate row-block graphs, all
+     * AOT-compiled for the Tensor G3 (convert/aot_compile_g3.py).
+     */
+    private fun loadNpuDecoder(): Map<String, Graph> {
+        val graphs = LinkedHashMap<String, Graph>()
+        try {
+            for (st in decStages) graphs[st] = Graph(context, "dec_$st", Backend.NPU, THREADS)
+            for (b in finalBlocks) graphs["blk_$b"] = Graph(context, "blk_$b", Backend.NPU, THREADS)
+        } catch (e: Throwable) {
+            graphs.values.forEach { it.close() }
+            throw e
+        }
+        return graphs
+    }
 
-    /** Compiles the decoder for the EdgeTPU (slow: ~minutes; NNAPI cannot cache it). Blocking. */
+    /** Loads the precompiled decoder onto the EdgeTPU (seconds). Blocking. */
     fun prepareNpu(): Boolean {
         synchronized(npuLock) {
             if (decoderNpu != null) return true
-            npuState = "compiling"
+            npuState = "loading"
             return try {
                 val t0 = System.nanoTime()
                 decoderNpu = loadNpuDecoder()
-                npuState = "ready (${(System.nanoTime() - t0) / 1_000_000_000}s compile)"
+                npuState = "ready (loaded in ${(System.nanoTime() - t0) / 1_000_000} ms)"
                 // The CPU decoder is no longer needed: free its packed weights.
                 synchronized(lock) { decoderCpu?.close(); decoderCpu = null }
                 true
             } catch (e: Throwable) {
-                Log.e(TAG, "NPU compile failed", e)
+                Log.e(TAG, "NPU load failed", e)
                 npuState = "failed: ${e.message}"
                 false
             }
@@ -134,8 +146,8 @@ class KokoroEngine private constructor(private val context: Context) {
     private val npuLock = Any()
 
     fun prepareNpuAsync() {
-        if (decoderNpu != null || npuState == "compiling") return
-        Thread({ prepareNpu() }, "kokoro-npu-compile").apply { priority = Thread.MIN_PRIORITY }.start()
+        if (decoderNpu != null || npuState == "loading") return
+        Thread({ prepareNpu() }, "kokoro-npu-load").apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
     fun releaseNpu() {
@@ -373,7 +385,6 @@ class KokoroEngine private constructor(private val context: Context) {
         val fnArr = FloatArray(4 * L)
         dsp.f0nFeaturesInto(f0, nc, 2 * L0, fnArr, L)
         val fnB = pool.floats("fn", 4 * L).also { it.asFloatBuffer().put(fnArr) }
-        val m2f = maskBuf("m2f", 2 * L0, H * 8)
         val m20 = maskBuf("m20", 20 * L0, H * 80)
         val mP = maskBuf("mP", 120 * L0 + 1, H * 480)
         lap("dsp")
@@ -381,7 +392,7 @@ class KokoroEngine private constructor(private val context: Context) {
         // ---- decoder
         val outB = pool.floats("out", 24 * stride)
         if (npu != null) {
-            runNpuDecoder(npu, "L$L", H, asr, fnB, harB, m1, m2, m2f, m20, mP, refS, outB, cancel)
+            runNpuDecoder(npu, "L$L", H, asr, fnB, harB, m1, m2, m20, mP, refS, outB, cancel)
             ms["dec_blocks"] = (ms["dec_blocks"] ?: 0) + lastBlockMs.first
             ms["dec_blocks_tpu"] = (ms["dec_blocks_tpu"] ?: 0) + lastBlockMs.second
             if (compareWithCpu) {
@@ -407,28 +418,12 @@ class KokoroEngine private constructor(private val context: Context) {
         return Triple(audio, durs, ChunkStats(n, L0, L, ms))
     }
 
-    /** Debug: per-stage relative L2 error of the NPU stage vs the same graph on CPU. */
-    @Volatile var compareStages = false
-    val stageErrors = java.util.Collections.synchronizedMap(LinkedHashMap<String, MutableList<Double>>())
-    private val cpuTwins = HashMap<String, Graph>()
-
-    private fun runStage(dec: Map<String, Graph>, name: String, sig: String, ins: List<ByteBuffer>, outs: List<ByteBuffer>) {
+    private fun runStage(dec: Map<String, Graph>, name: String, sig: String, ins: List<ByteBuffer>, outs: List<ByteBuffer>) =
         dec.getValue(name).run(sig, ins, outs)
-        if (!compareStages) return
-        val twin = cpuTwins.getOrPut(name) { cpuGraph("dec_$name") }
-        val ref = outs.mapIndexed { i, o -> pool.get("twin$i", o.capacity()) }
-        twin.run(sig, ins, ref)
-        for (i in outs.indices) {
-            val a = outs[i].asFloatBuffer(); val b = ref[i].asFloatBuffer()
-            var se = 0.0; var sr = 0.0
-            for (k in 0 until a.remaining()) { val d = (a[k] - b[k]).toDouble(); se += d * d; sr += b[k].toDouble() * b[k] }
-            stageErrors.getOrPut(name) { ArrayList() }.add(kotlin.math.sqrt(se / maxOf(sr, 1e-30)))
-        }
-    }
 
     private fun runNpuDecoder(
         dec: Map<String, Graph>, sig: String, H: Int, asr: ByteBuffer, fnB: ByteBuffer, harB: ByteBuffer,
-        m1: ByteBuffer, m2: ByteBuffer, m2f: ByteBuffer, m20: ByteBuffer, mP: ByteBuffer, refS: ByteBuffer,
+        m1: ByteBuffer, m2: ByteBuffer, m20: ByteBuffer, mP: ByteBuffer, refS: ByteBuffer,
         outB: ByteBuffer, cancel: AtomicBoolean,
     ) {
         val L = (H - 1) * 4
@@ -442,9 +437,11 @@ class KokoroEngine private constructor(private val context: Context) {
         }
         val x2 = pool.floats("x2", 512 * 2 * L)
         runStage(dec, "fr4", sig, listOf(h, asr, fnB, m1, m2, refS), listOf(x2))
-        // generator stage 0 (20x rate, folded rows of 80)
+        // generator stage 0 (20x rate, folded rows of 80): noise source, then upsampling + add
+        val src = pool.floats("src20", 256 * H * 80)
+        runStage(dec, "g0s", sig, listOf(harB, m20, refS), listOf(src))
         val x20 = pool.floats("x20", 256 * H * 80)
-        runStage(dec, "g0", sig, listOf(x2, harB, m2f, m20, refS), listOf(x20))
+        runStage(dec, "g0u", sig, listOf(x2, src, m20), listOf(x20))
         val ys = (0 until 3).map { j ->
             pool.floats("y$j", 256 * H * 80).also { runStage(dec, "rb0$j", sig, listOf(x20, m20, refS), listOf(it)) }
         }

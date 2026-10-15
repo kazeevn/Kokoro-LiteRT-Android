@@ -462,13 +462,18 @@ class DecoderStage(nn.Module):
     H = L/4 + 1 rows. Stages and their inputs, in order:
       front: asr [1,512,L], fn [1,4,L], m1 [1,1,L], m2 [1,1,2L], ref_s  -> x2 [1,512,2L]
       g0:    x2, har [1,24,H,480], m2f [1,1,H,8], m20 [1,1,H,80], ref_s -> x20 [1,256,H,80]
+             (on the EdgeTPU split in two, as one program it times out at 96+ frames:
+      g0s:   har, m20, ref_s                                          -> src [1,256,H,80]
+      g0u:   x2, src, m20                                             -> x20)
+             (g0u derives m2f from m20 and upsamples with a polyphase conv: the AOT compiler
+             miscompiles the strided TRANSPOSE_CONV)
       rb0j:  x20, m20, ref_s                                         -> y_j  (j = 0..2)
       g1:    y0, y1, y2, har, m20, mP [1,1,H,480], ref_s             -> xP [1,128,H,480]
       rb1j:  xP, mP, ref_s                                           -> z_j  (j = 0..2)
       post:  z0, z1, z2, mP                                          -> out [1,24,H,480]
     """
 
-    STAGES = ["front", "fr0", "fr1", "fr2", "fr3", "fr4", "g0", "rb00", "rb01", "rb02", "g1", "rb10", "rb11", "rb12", "post"]
+    STAGES = ["front", "fr0", "fr1", "fr2", "fr3", "fr4", "g0", "g0s", "g0u", "rb00", "rb01", "rb02", "g1", "rb10", "rb11", "rb12", "post"]
 
     def __init__(self, dec: DecoderGraph, stage: str):
         super().__init__()
@@ -493,11 +498,22 @@ class DecoderStage(nn.Module):
             x = fd.fold(x, fd.W2) * m2f
             src = fd.fresblock1(g.noise_res[0], fd.fconv(g.noise_convs[0], har), ref_s[:, :128], r20)
             return (fd.fconv_t(g.ups[0], x) + src) * r20.m
+        if st == "g0s":
+            har, r20, ref_s = a[0], fd.FRate(a[1]), a[2]
+            return fd.fresblock1(g.noise_res[0], fd.fconv(g.noise_convs[0], har), ref_s[:, :128], r20) * r20.m
+        if st == "g0u":
+            x2, src, m20 = a
+            # prefix masks: 2x-rate sample i is valid iff 20x-rate sample 10*i is
+            m2f = m20.reshape(*m20.shape[:3], fd.W2, fd.W20 // fd.W2)[..., 0]
+            x = F.leaky_relu(x2, negative_slope=0.1)
+            x = F.pad(x, (0, m2f.shape[2] * fd.W2 - x.shape[-1]))
+            x = fd.fold(x, fd.W2) * m2f
+            return (fd.fconv_t_poly(g.ups[0], x) + src) * m20
         if st.startswith("rb"):  # rb<i><j> or rb<i><j>s<k> (single dilation step k)
             i, j = int(st[2]), int(st[3])
             steps = [int(st[5])] if len(st) > 4 else None
             r = fd.FRate(a[1])
-            return fd.fresblock1(g.resblocks[i * g.num_kernels + j], a[0], a[2][:, :128], r, steps) * r.m
+            return fd.fresblock1(g.resblocks[i * g.num_kernels + j], a[0], a[2][:, :128], r, steps, max_taps=7) * r.m
         if st == "g1":
             y0, y1, y2, har, r20, rP, ref_s = a[0], a[1], a[2], a[3], fd.FRate(a[4]), fd.FRate(a[5]), a[6]
             x = F.leaky_relu((y0 + y1 + y2) / g.num_kernels, negative_slope=0.1)

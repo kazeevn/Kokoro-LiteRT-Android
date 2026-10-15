@@ -27,8 +27,10 @@ def halo(x, left, right):
     return torch.cat(parts, 3) if len(parts) > 1 else x
 
 
-def fconv(conv: nn.Conv1d, x):
-    """Conv1d (any stride) on folded input. Output row width = W / stride."""
+def fconv(conv: nn.Conv1d, x, max_taps=None):
+    """Conv1d (any stride) on folded input. Output row width = W / stride.
+    With `max_taps`, wider kernels run as a sum of convs over groups of at most that many taps
+    (the Tensor SDK AOT compiler miscompiles the 11-tap convs at 33 rows)."""
     k, s, d, p = conv.kernel_size[0], conv.stride[0], conv.dilation[0], conv.padding[0]
     W = x.shape[3]
     assert W % s == 0
@@ -36,7 +38,17 @@ def fconv(conv: nn.Conv1d, x):
     left = p
     right = max(0, s * (W // s - 1) - p + d * (k - 1) - (W - 1))
     xh = halo(x, left, right)
-    return F.conv2d(xh, conv.weight[:, :, None, :], conv.bias, stride=(1, s), dilation=(1, d))
+    w = conv.weight[:, :, None, :]
+    if not max_taps or k <= max_taps:
+        return F.conv2d(xh, w, conv.bias, stride=(1, s), dilation=(1, d))
+    span = s * (W // s - 1) + 1  # input columns covered by one tap across the outputs
+    y = None
+    for t0 in range(0, k, max_taps):
+        t1 = min(k, t0 + max_taps)
+        part = xh[:, :, :, d * t0 : d * (t1 - 1) + span]
+        z = F.conv2d(part, w[..., t0:t1], conv.bias if t0 == 0 else None, stride=(1, s), dilation=(1, d))
+        y = z if y is None else y + z
+    return y
 
 
 def fconv_t(conv: nn.ConvTranspose1d, x):
@@ -49,6 +61,24 @@ def fconv_t(conv: nn.ConvTranspose1d, x):
     y = F.conv_transpose2d(xh, conv.weight[:, :, None, :], conv.bias, stride=(1, s))
     start = p + s * left
     return y[:, :, :, start : start + s * W]
+
+
+def fconv_t_poly(conv: nn.ConvTranspose1d, x):
+    """fconv_t as a polyphase regular convolution (the Tensor SDK AOT compiler miscompiles these
+    strided TRANSPOSE_CONVs). With n + p = s*q + r: y[n] = sum_m x[q-m] w[s*m + r] + b, m < k/s;
+    one conv yields all s phases as channels c*s + r, which are then interleaved."""
+    k, s, p = conv.kernel_size[0], conv.stride[0], conv.padding[0]
+    assert k % s == 0 and p < s
+    M, W, C = k // s, x.shape[3], conv.out_channels
+    q1 = (s * W - 1 + p) // s  # q runs over [0, q1]
+    xh = halo(x, M - 1, max(0, q1 - (W - 1)))
+    w = conv.weight  # [C_in, C_out, k]
+    taps = [w[:, :, s * (M - 1 - j) : s * (M - 1 - j) + s] for j in range(M)]  # [C_in, C_out, s] each
+    wc = torch.stack(taps, -1).permute(1, 2, 0, 3).reshape(C * s, -1, 1, M)
+    z = F.conv2d(xh, wc, conv.bias.repeat_interleave(s))  # [1, C*s, H, q1+1]
+    T = z.shape[3]
+    z = z.reshape(1, C, s, z.shape[2], T).permute(0, 1, 3, 4, 2).reshape(1, C, z.shape[2], T * s)
+    return z[:, :, :, p : p + s * W]
 
 
 def shift_reflect1(x):
@@ -95,17 +125,18 @@ def fsnake(x, a):
     return x + (1 / a) * torch.sin(a * x) ** 2
 
 
-def fresblock1(blk, x, s, r: FRate, steps=None):
-    """AdaINResBlock1 on folded input; `steps` limits which of its 3 dilation steps run."""
+def fresblock1(blk, x, s, r: FRate, steps=None, max_taps=None):
+    """AdaINResBlock1 on folded input; `steps` limits which of its 3 dilation steps run;
+    `max_taps` see fconv."""
     for k, (c1, c2, n1, n2, a1, a2) in enumerate(
         zip(blk.convs1, blk.convs2, blk.adain1, blk.adain2, blk.alpha1, blk.alpha2)
     ):
         if steps is not None and k not in steps:
             continue
         xt = fsnake(fadain(n1, x, s, r), a1)
-        xt = fconv(c1, xt * r.m)
+        xt = fconv(c1, xt * r.m, max_taps)
         xt = fsnake(fadain(n2, xt, s, r), a2)
-        xt = fconv(c2, xt * r.m)
+        xt = fconv(c2, xt * r.m, max_taps)
         x = xt + x
     return x
 
@@ -190,7 +221,7 @@ class FinalBlock(nn.Module):
         if kind == "g1u":
             y0, y1, y2, m20 = a
             x = F.leaky_relu((y0 + y1 + y2) / g.num_kernels, negative_slope=0.1) * m20
-            xt = fconv_t(g.ups[1], x)  # [1,128,R+2,480]; rows 1..R are exact
+            xt = fconv_t_poly(g.ups[1], x)  # [1,128,R+2,480]; rows 1..R are exact
             # shift by one sample (cat([x[1:2], x])): the first sample of row r comes from row r-1
             return torch.cat([xt[:, :, :-2, -1:], xt[:, :, 1:-1, :-1]], 3)
         if kind == "add":

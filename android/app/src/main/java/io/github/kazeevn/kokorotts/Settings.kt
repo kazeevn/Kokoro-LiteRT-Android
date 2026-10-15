@@ -23,7 +23,7 @@ object Settings {
     fun speedScale(c: Context): Float = prefs(c).getFloat(KEY_SPEED, 1f)
     fun setSpeedScale(c: Context, v: Float) = prefs(c).edit().putFloat(KEY_SPEED, v).apply()
 
-    /** Applies the backend preference: NPU compiles in the background; CPU serves meanwhile. */
+    /** Applies the backend preference: NPU graphs load in the background; CPU serves meanwhile. */
     fun apply(c: Context, engine: KokoroEngine) {
         engine.preferredBackend = backend(c)
         if (engine.preferredBackend == Backend.NPU) engine.prepareNpuAsync() else engine.releaseNpu()

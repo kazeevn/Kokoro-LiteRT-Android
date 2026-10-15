@@ -34,5 +34,5 @@ target_compile_definitions(espeak-ng INTERFACE LIBESPEAK_NG_EXPORT=1)
 target_compile_options(espeak-ng PRIVATE -fPIC -fwrapv -w)
 target_link_libraries(espeak-ng PRIVATE ucd)
 
-add_library(kokoro_native SHARED espeak_jni.cpp xnnpack_jni.cpp)
+add_library(kokoro_native SHARED espeak_jni.cpp litert_buffers.cpp)
 target_link_libraries(kokoro_native espeak-ng ucd log dl)

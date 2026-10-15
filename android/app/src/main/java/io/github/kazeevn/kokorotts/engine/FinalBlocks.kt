@@ -33,6 +33,9 @@ class FinalBlocks(
 
     private val arrays = HashMap<String, FloatArray>()
 
+    /** Rows at or past this index read as zeros in [rows] (they belong to skipped blocks). */
+    private var rowLimit = Int.MAX_VALUE
+
     /** Reused full-size work arrays (avoids ~200 MB of garbage per chunk). */
     private fun work(key: String, n: Int): FloatArray {
         val a = arrays[key]
@@ -58,8 +61,14 @@ class FinalBlocks(
 
     private fun runImpl(ys: List<FloatArray>, har: FloatArray, m20: FloatArray, mP: FloatArray, H: Int,
                         refS: ByteBuffer, out: FloatArray) {
-        val nb = (H + R - 1) / R
-        val hp = nb * R
+        val hp = (H + R - 1) / R * R
+        // Only blocks holding valid samples run (a chunk padded to a much larger bucket would
+        // otherwise spend most of its TPU time on padding). Exact: padded rows reach valid ones
+        // only through halos, which the graphs mask; rows past the last block read as zeros.
+        var lastValid = mP.size - 1
+        while (lastValid > 0 && mP[lastValid] <= 0.5f) lastValid--
+        val nb = (lastValid / W + 1 + R - 1) / R
+        rowLimit = nb * R
         val counts = IntArray(nb) { b ->
             var n = 0
             for (r in b * R until minOf(b * R + R, H)) for (w in 0 until W) if (mP[r * W + w] > 0.5f) n++
@@ -181,7 +190,7 @@ class FinalBlocks(
         val fb = buf.asFloatBuffer()
         // rows of one channel are contiguous: copy the in-range span with one bulk put
         val a = maxOf(lo, 0)
-        val b = minOf(lo + n, srcRows)
+        val b = minOf(lo + n, srcRows, rowLimit)
         val before = (a - lo) * w
         val after = (lo + n - maxOf(b, a)) * w
         val zeros = FloatArray(maxOf(before, after))
