@@ -13,3 +13,4 @@ android/.idea/
 android/app/src/main/assets/kokoro/
 app/.cxx/
 bench/results/*.pftrace
+__pycache__/
