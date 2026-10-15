@@ -14,3 +14,6 @@ android/app/src/main/assets/kokoro/
 app/.cxx/
 bench/results/*.pftrace
 __pycache__/
+# Google Tensor SDK (beta) download and its tutorial notebook
+litert_plugin_compiler.tar.gz
+LiteRT NPU AOT compilation for Google Tensor.ipynb
