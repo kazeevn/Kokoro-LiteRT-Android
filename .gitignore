@@ -1,0 +1,15 @@
+.venv*/
+work/
+third_party/*
+!third_party/espeak-ng
+*.pftrace
+android/.gradle/
+android/build/
+android/*/build/
+android/*/.cxx/
+android/.kotlin/
+android/local.properties
+android/.idea/
+android/app/src/main/assets/kokoro/
+app/.cxx/
+bench/results/*.pftrace

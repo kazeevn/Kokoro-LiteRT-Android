@@ -1,0 +1,12 @@
+#!/bin/bash
+# adb with retries: the USB link to the test phone drops out occasionally.
+for i in 1 2 3 4 5 6; do
+  adb wait-for-device 2>/dev/null
+  out=$(adb "$@" 2>&1); rc=$?
+  if [ $rc -eq 0 ] && ! grep -q -E "no devices|device offline|device unauthorized|device '.*' not found" <<<"$out"; then
+    printf '%s\n' "$out"; exit 0
+  fi
+  echo "adbr: retry $i ($rc): $(tail -1 <<<"$out")" >&2
+  sleep 3
+done
+printf '%s\n' "$out"; exit 1

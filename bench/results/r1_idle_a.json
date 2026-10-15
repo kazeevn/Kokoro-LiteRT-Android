@@ -1,0 +1,13 @@
+{
+  "tag": "r1_idle_a",
+  "backend": "CPU",
+  "mode": "idle",
+  "ok": true,
+  "phases": [
+    {
+      "name": "idle",
+      "start_ns": 252468668395362,
+      "end_ns": 252558671196594
+    }
+  ]
+}

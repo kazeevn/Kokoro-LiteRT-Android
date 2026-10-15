@@ -1,0 +1,354 @@
+The quick brown fox jumps over the lazy dog.
+It was the best of times, it was the worst of times.
+Call me Ishmael.
+"Where are you going?" she asked.
+"Home," he replied, without looking back.
+I don't know what you're talking about.
+She can't believe it's already October.
+They won't be coming tonight, will they?
+We'd better hurry; the train leaves at 7:45.
+You've got to be kidding me!
+He'll call you back in five minutes.
+Let's go to the park after lunch.
+It's a well-known fact that cats hate water.
+My mother-in-law arrived on Tuesday.
+The state-of-the-art system cost $4.5 million.
+She paid $12.99 for the book.
+The ticket costs £20, or about €23.
+He earned $1,250 last week.
+The company lost $3 billion in 2008.
+Only 5% of the students passed the exam.
+The temperature dropped to -5 degrees.
+She finished 1st, and he came in 2nd.
+This is the 3rd time I've told you.
+On the 21st of June, we celebrate the solstice.
+The 4th of July is a national holiday.
+He was born in 1987 and moved to Paris in 2003.
+The war lasted from 1939 to 1945.
+In 1066, William conquered England.
+The year 2000 was a leap year.
+Call me at 555-1234 tomorrow.
+The answer is 42.
+Pi is approximately 3.14159.
+Add 0.5 cups of sugar.
+Version 2.0 was released in March.
+The score was 3 to 2.
+There were 1,000,000 people at the concert.
+Chapter 12 begins on page 347.
+He scored 101 points in the game.
+Room 205 is on the second floor.
+The flight departs at 10:30 a.m.
+We met in the 1990s.
+She was in her 20s when she wrote it.
+Mr. Smith and Mrs. Jones went to Washington.
+Dr. Watson examined the patient carefully.
+St. Louis is a city in Missouri.
+The U.S. economy grew last year.
+The NASA mission was a success.
+He works for the FBI.
+I sent the PDF via email.
+The CEO announced a new strategy.
+NATO and the UN held talks.
+The BBC reported the story.
+Please RSVP by Friday.
+She has a PhD in physics.
+I read the book yesterday.
+I like to read before bed.
+She reads every night.
+Have you read this article?
+He will read it aloud.
+They live in a small house.
+The band played live on television.
+Let's record the meeting.
+She broke the world record.
+The lead singer has a beautiful voice.
+Lead pipes are dangerous.
+The wind was strong last night.
+Don't forget to wind the clock.
+A tear rolled down her cheek.
+Don't tear the paper.
+I object to that remark.
+What is that object on the table?
+She will present the award.
+He gave me a present.
+We need to close the window.
+The store is close to my house.
+They refuse to leave.
+Please take out the refuse.
+The wound was deep.
+He wound the rope around the post.
+I used to live there.
+This is a used car.
+Use the force, Luke.
+What is the use of crying?
+The bandage was wound around the wound.
+Does he know about the does in the forest?
+The project was a success.
+We project a growth of ten percent.
+He's content with the content of the report.
+Can you permit me to see the permit?
+The minute hand moved one minute forward.
+Polish the table before the Polish guests arrive.
+"Hello," said Harry.
+'Single quotes,' she wrote, 'are also used.'
+He said—and I quote—"Never again."
+Wait... what was that?
+Really?! You're serious?
+The list includes apples, oranges, and bananas.
+Note: this is important.
+(This is a parenthetical remark.)
+She whispered [to herself] that it was over.
+Rock 'n' roll will never die.
+The children's toys were everywhere.
+The boss's office is upstairs.
+James' car is red.
+The Joneses' house is on the corner.
+Ain't nobody got time for that.
+Y'all should come over.
+I'd've done it if I could've.
+Shouldn't you be at work?
+It isn't fair!
+Who's there?
+What's the matter with you?
+How'd you do that?
+Where'd he go?
+There's a problem with the engine.
+That'll be ten dollars.
+The supercalifragilisticexpialidocious song is catchy.
+The floccinaucinihilipilification of the idea was unfair.
+He drove his Volkswagen to Gothenburg.
+Hermione and Ron followed Dumbledore.
+Daenerys Targaryen rode the dragon.
+The Zxqvy corporation filed for bankruptcy.
+Nguyen and Oyelaran presented the paper.
+Tchaikovsky composed the Nutcracker.
+The blorptastic flimflam zoomed past.
+She works at Google and uses an iPhone.
+The JavaScript library is called jQuery.
+He was e-mailing his co-workers.
+The re-election campaign started early.
+It was a dog-eat-dog world.
+She bought a twenty-five-year-old wine.
+The ninety-nine bottles stood on the wall.
+Twenty-one guns were fired.
+The X-ray showed a fracture.
+I'm going to the U.K. next week.
+The meeting is at 3 p.m. sharp.
+Etc., etc., and so on.
+E.g., apples and pears.
+The cat sat on the mat.
+A man, a plan, a canal: Panama.
+An apple a day keeps the doctor away.
+I am who I am.
+Am I right?
+The time is 8 AM.
+To be or not to be, that is the question.
+In the beginning was the Word.
+Come in, please.
+He walked by the river.
+They drove by.
+The vs. game was exciting.
+It's the Lakers vs. the Celtics.
+The THE is all caps.
+IN THE END, IT DOESN'T EVEN MATTER.
+STOP RIGHT THERE!
+WARNING: HIGH VOLTAGE.
+He said, "I'll be back."
+"Are you okay?" "Yes, I'm fine."
+"Don't," she said. "Please don't."
+It's 2:30 in the morning.
+The meeting lasted 2 hours.
+I have 2 cats and 3 dogs.
+She ran 10 km in 45 minutes.
+The recipe calls for 2 cups of flour.
+The population is 7.8 billion.
+Interest rates rose 0.25 percent.
+The building has 100 floors.
+He turned 18 last month.
+Grades went from 85 to 92.
+The 1800s saw rapid industrialization.
+Queen Elizabeth II reigned for decades.
+Henry VIII had six wives.
+World War II ended in 1945.
+The price is $5.
+That costs $0.99.
+It's only 99 cents.
+I owe you $1.
+The fee is $100.50.
+He won £1,000,000.
+The bill came to $23.45.
+Shares fell 3.5% today.
+The odds are 1 in 1,000.
+Call 911 in an emergency.
+The zip code is 90210.
+His number is 007.
+The 2nd Avenue line opened in 2017.
+She lives at 221B Baker Street.
+Open the door at once!
+Close your eyes and count to ten.
+He's been reading since dawn.
+They're running late again.
+We've been waiting for hours.
+She hadn't seen him in years.
+You mustn't touch that.
+I couldn't care less.
+He'd rather stay home.
+Nobody knew where the treasure was hidden.
+The old man and the sea.
+Once upon a time, there lived a princess.
+The castle stood on a hill overlooking the valley.
+She opened the letter with trembling hands.
+"I never wanted this," he muttered.
+The rain fell steadily throughout the night.
+Somewhere in the distance, a dog barked.
+His heart pounded as he climbed the stairs.
+The forest was dark and silent.
+She smiled, but her eyes remained sad.
+They walked hand in hand along the beach.
+The clock struck midnight.
+He paused, considering his next move.
+"You're late," she observed dryly.
+"Traffic," he said with a shrug.
+The candle flickered and went out.
+A cold wind swept across the moor.
+She couldn't shake the feeling that something was wrong.
+The detective examined the evidence closely.
+The ship sailed into the harbor at dawn.
+Her laughter echoed through the empty halls.
+He wondered whether she would ever return.
+The letter was dated March 3rd, 1892.
+They had known each other since childhood.
+The garden was overgrown with weeds.
+A single tear slid down his cheek.
+The crowd cheered as the team took the field.
+I've never seen anything like it.
+Neither of them spoke for a long time.
+The kettle whistled in the kitchen.
+Outside, the snow continued to fall.
+"What do you want from me?" she demanded.
+"Nothing," he said quietly. "Nothing at all."
+The professor adjusted his glasses and began the lecture.
+Thousands of stars glittered overhead.
+The village had changed little over the years.
+She tucked the photograph into her pocket.
+He couldn't remember the last time he'd slept.
+The road wound through the mountains.
+Their footsteps echoed on the cobblestones.
+The aroma of fresh bread filled the air.
+He was determined to finish what he'd started.
+The little girl clutched her teddy bear.
+I'll never forget the day we met.
+The storm knocked out the power.
+She glanced at her watch impatiently.
+The boy skipped stones across the pond.
+Somebody had left the gate open.
+It's raining cats and dogs.
+The quick-witted student answered first.
+They sell sea shells by the sea shore.
+Peter Piper picked a peck of pickled peppers.
+How much wood would a woodchuck chuck?
+The archaeologist excavated the ancient ruins.
+Photosynthesis converts sunlight into energy.
+The mitochondria is the powerhouse of the cell.
+Quantum entanglement puzzles physicists.
+The algorithm runs in logarithmic time.
+Neural networks require large datasets.
+The patient was diagnosed with pneumonia.
+The thermometer read 98.6 degrees.
+Antidisestablishmentarianism is a long word.
+The colonel ordered the troops to advance.
+The choir sang in the cathedral.
+The yacht anchored near the island.
+She was a connoisseur of fine wines.
+The entrepreneur pitched her idea to investors.
+The bureaucracy slowed everything down.
+The rendezvous was set for midnight.
+He spoke with a thick Scottish accent.
+They visited Edinburgh, Glasgow, and Aberdeen.
+The Thames flows through London.
+We flew from New York to Los Angeles.
+The Amazon rainforest is shrinking.
+Mount Everest is 8,849 meters tall.
+The Eiffel Tower was built in 1889.
+Beethoven's Ninth Symphony is magnificent.
+Shakespeare wrote Hamlet around 1600.
+The Mona Lisa hangs in the Louvre.
+Einstein published his theory in 1905.
+Leonardo da Vinci was a genius.
+Martin Luther King Jr. gave a famous speech.
+J.R.R. Tolkien wrote The Lord of the Rings.
+George R.R. Martin is still writing.
+C.S. Lewis created Narnia.
+The 49ers won the game.
+The 747 landed safely.
+He drank 3 cups of coffee.
+I bought 12 eggs, 2 loaves of bread, and 1 gallon of milk.
+The meeting was rescheduled from Monday to Wednesday.
+January, February, and March are cold months.
+It happened on Saturday, December 25th.
+The deadline is 11:59 p.m. on Friday.
+She's 5'6" tall.
+The ratio is 3:1.
+Use a 50/50 mix of water and vinegar.
+Visit www.example.com for details.
+Email me at john@example.com.
+The file is named report_final.docx.
+Press Ctrl+C to copy.
+The temperature is 72°F.
+This costs about 50¢.
+It's #1 on the charts.
+The A-team arrived.
+Plan B is our backup.
+She got an A on the test.
+Vitamin C is good for you.
+The T-shirt was too small.
+He's a VIP guest.
+I love NYC in the fall.
+The DJ played all night.
+Our ETA is 5 minutes.
+OK, let's go.
+Okay, fine.
+Hmm, I'm not sure.
+Uh-oh, we're in trouble.
+Wow! That's amazing!
+Shh, the baby is sleeping.
+Oh no, I forgot my keys.
+Yeah, right.
+Nah, I don't think so.
+Gosh, that was close.
+Alright, alright, I'll do it.
+He's gonna win, I'm telling ya.
+I wanna go home.
+Gotta catch 'em all.
+Whatcha doing?
+The colour of the theatre was grey.
+He organised the programme carefully.
+She travelled to the centre of town.
+The neighbour's behaviour was strange.
+They analysed the catalogue.
+Tomatoes and potatoes are vegetables.
+Schedule the meeting for Tuesday.
+The aluminium can was recycled.
+Either way, it's fine.
+Data is plural; datum is singular.
+The route was blocked.
+Caramel or caramel?
+I said either, not neither.
+The garage door is broken.
+He has an advertisement in the paper.
+Herb grows herbs in his garden.
+The vase broke into pieces.
+"Ugh," she groaned, "not again."
+"Help!" he cried. "Somebody help me!"
+'Twas the night before Christmas.
+O'Brien and O'Neil arrived together.
+McDonald's is open late.
+She's from the Isle of Man.
+The fiancé and the fiancée met at the café.
+The naïve résumé impressed nobody.
+Smörgåsbord is a Swedish word.
+They ate crème brûlée for dessert.
+The décor was très chic.
+He sipped his piña colada.
+The soufflé collapsed.
+Über cool, she said.

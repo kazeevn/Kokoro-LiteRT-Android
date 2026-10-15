@@ -1,0 +1,56 @@
+{
+  "tag": "sweep_t4_fp16false",
+  "backend": "CPU",
+  "mode": "synth",
+  "frame_cap": 128,
+  "cpu_threads": 4,
+  "cpu_fp16": false,
+  "warm_pass_s": 106.156555675,
+  "active_backend": "CPU",
+  "sentences": 19,
+  "ok": true,
+  "phases": [
+    {
+      "name": "prepare",
+      "start_ns": 249629840615167,
+      "end_ns": 249737134863185
+    },
+    {
+      "name": "synth0",
+      "start_ns": 249737136036484,
+      "end_ns": 249876029371147,
+      "audio_s": 88.375,
+      "chunks": 39,
+      "wall_s": 138.893334663,
+      "stage_ms": {
+        "dsp": 3027,
+        "expand": 760,
+        "f0n": 5280,
+        "istft": 3452,
+        "text": 10248,
+        "decoder": 115522
+      },
+      "ttfa_ms": [
+        4447,
+        4484,
+        3209,
+        2291,
+        3415,
+        2255,
+        3554,
+        2342,
+        3276,
+        3276,
+        2267,
+        3330,
+        4389,
+        3419,
+        2400,
+        3352,
+        3439,
+        4444,
+        3217
+      ]
+    }
+  ]
+}
