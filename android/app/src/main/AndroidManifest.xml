@@ -35,6 +35,12 @@
                 android:resource="@xml/tts_engine" />
         </service>
 
+        <!-- Direct synthesis for apps that schedule playback themselves (Readest) -->
+        <provider
+            android:name=".SynthesisProvider"
+            android:authorities="io.github.kazeevn.kokorotts.synthesis"
+            android:exported="true" />
+
         <activity
             android:name=".CheckVoiceDataActivity"
             android:exported="true"

@@ -9,6 +9,14 @@ Use it from any app that speaks through Android's TTS API (e.g. [Readest](https:
 install the APK, then *Settings → System → Languages → Text-to-speech output → Preferred engine →
 Kokoro TTS*. The app's own screen picks the default voice, the decoder backend and a speed factor.
 
+Apps that play audio themselves can skip the system TTS framework through the `SynthesisProvider`
+content provider (`content://io.github.kazeevn.kokorotts.synthesis`): it returns 24 kHz PCM and
+word timings for any sentence at once. The framework only starts synthesizing the next utterance
+once the previous one is within ~0.5 s of the end of playback (`MAX_UNCONSUMED_AUDIO_MS` in
+`SynthesisPlaybackQueueItem`), which leaves a pause between sentences with a model this slow.
+A local Readest build uses it as an engine of its own ("Kokoro TTS" voices), synthesizing a few
+sentences ahead of playback.
+
 ## How it works
 
 Kokoro's output length depends on its predicted phoneme durations, while LiteRT graphs — and
