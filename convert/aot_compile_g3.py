@@ -3,7 +3,8 @@
 Runs in .venv-aot (ai-edge-litert 2.3.0 + ai-edge-litert-sdk-google-tensor, see README).
 Usage: .venv-aot/bin/python convert/aot_compile_g3.py [graph ...] [--out DIR] [--flag k=v ...]
 Compiles work/npu_src/<graph>.tflite (from export_all.py) into assets/kokoro/npu/<graph>.tflite;
-without graph names, every NPU graph listed in assets/kokoro/kokoro.json.
+without graph names, every NPU graph listed in assets/kokoro/kokoro.json (decoder stages as one
+graph per frame bucket, dec_<stage>_L<n>).
 """
 
 import argparse
@@ -24,7 +25,8 @@ SRC = ROOT / "work/npu_src"
 
 def npu_graphs() -> list[str]:
     meta = json.loads((ASSETS / "kokoro.json").read_text())
-    return [f"dec_{s}" for s in meta["decoder_stages"]] + [f"blk_{b}" for b in meta["final_blocks"]]
+    return [f"dec_{s}_L{n}" for s in meta["decoder_stages"] for n in meta["npu_frame_buckets"]] + \
+        [f"blk_{b}" for b in meta["final_blocks"]]
 
 
 def main():
@@ -51,7 +53,7 @@ def main():
         try:
             res = aot_lib.aot_compile(str(pathlib.Path(args.src) / f"{name}.tflite"), output_dir=tmp,
                                       target=[target], keep_going=False,
-                                      **(flags | ({} if args.flag else graph_flags.get(name, {}))))
+                                      **(flags | ({} if args.flag else graph_flags.get(name.split("_L")[0], {}))))
             res.export(out, model_name=name)
             (out / f"{name}_Google_Tensor_G3.tflite").rename(out / f"{name}.tflite")
             stats = [str(m.partition_stats) for m in res.models if m.partition_stats]

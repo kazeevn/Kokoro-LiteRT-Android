@@ -77,8 +77,10 @@ tensor buffers (cpp/litert_buffers.cpp): the Kotlin TensorBuffer API only copies
 which cost more than the TPU itself for the ~4 MB row-block calls.
 
 Chunks are at most 256 frames (6.4 s of audio) on both decoders. The NPU stages have buckets
-32/64/96/128/256 frames (each bucket adds ~100 MB of compiled weights, hence no 192); the CPU
-graphs 32…256. Validation: convert/verify_assets.py (host, vs PyTorch: log-spectrogram correlation
+32/64/96/128/256 frames (each bucket adds ~100 MB of compiled weights, hence no 192), compiled as
+one file per stage and bucket (`dec_<stage>_L<n>`): the Google Tensor dispatch library loads a
+compiled file's whole bytecode into DMA-BUF once per signature, so one five-bucket file per stage
+took 5× its size (2.6 GB for the decoder instead of 0.53 GB). The CPU graphs have buckets 32…256. Validation: convert/verify_assets.py (host, vs PyTorch: log-spectrogram correlation
 0.999 — the residual is float32 phase drift of the original's sine source) and the app's
 `compare` benchmark mode (NPU vs CPU decoder on identical inputs, on the phone: 19 chunks of
 1.4–6 s, log-spectrogram correlation ≥ 0.9993, SNR 26–32.6 dB, median 31 dB).
@@ -92,7 +94,9 @@ compile for the TPU (INTERNAL compiler error), so they always run on the CPU.
 On the bench corpus (bench/run_bench.sh, one TTS request per sentence), LiteRT 2.3.0:
 NPU decoder **0.53× real time**, first audio per sentence 1.17 s median / 3.0 s p90 (long
 sentences are no longer split at 3.2 s, so their first chunk takes longer); CPU 1.05× real
-time, 2.6 s. Peak memory (VmHWM) with the NPU decoder ~0.9 GB. Default backend: NPU (the CPU
+time, 2.6 s. Peak memory (VmHWM) with the NPU decoder ~0.9 GB, plus ~0.53 GB of DMA-BUF for the
+TPU programs (not part of VmHWM or PSS; `dumpsys meminfo -S` shows the system total, and the
+engine logs its own per graph at load). Default backend: NPU (the CPU
 serves while the NPU graphs load, ~1.5 s).
 
 bench/RESULTS.md has SoC energy from the on-device power monitor, measured with the previous

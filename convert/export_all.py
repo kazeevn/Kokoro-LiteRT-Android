@@ -6,8 +6,8 @@ Graphs are multi-signature .tflite files (one signature per length bucket, weigh
   text.tflite        signatures T<n>  (token buckets)
   f0n.tflite         signatures L<n>  (frame buckets)
   dec_cpu.tflite     signatures L<n>  (whole 1-D decoder in one graph; CPU)
-EdgeTPU graphs (dec_<stage> with signatures L<n>, blk_<kind> with signature "B") go to
-work/npu_src/; convert/aot_compile_g3.py compiles them into assets/kokoro/npu/ for the Tensor G3.
+EdgeTPU graphs (dec_<stage>_L<n> with the one signature L<n>, blk_<kind> with signature "B") go
+to work/npu_src/; convert/aot_compile_g3.py compiles them into assets/kokoro/npu/ for the Tensor G3.
 plus voices/<name>.bin (float32 [510, 256]) and kokoro.json (vocab, buckets, DSP constants).
 """
 import argparse
@@ -30,6 +30,9 @@ FRAME_BUCKETS = [32, 64, 96, 128, 192, 256]  # text/f0n/CPU decoder
 # EdgeTPU decoder stages. (NNAPI's on-device compiler failed at 192+ frames; the AOT-compiled
 # stages are accurate up to 256 frames = 6.4 s.) Each bucket carries its own compiled weights
 # (~108 MB for all stages), so there is no 192 bucket: chunks of 129-256 frames pad to 256.
+# One file per stage and bucket: the Google Tensor dispatch library loads a compiled file's whole
+# bytecode (every signature's program) into DMA-BUF once per signature, so a stage with all five
+# buckets in one file took 5x its size (2.6 GB for the decoder instead of ~0.53 GB).
 NPU_FRAME_BUCKETS = [32, 64, 96, 128, 256]
 # EdgeTPU decoder graphs as shipped (bucketed by frames); the last (120x) rate runs as fixed-size
 # row blocks (folded.FinalBlock). The front is split per residual block: as one program the TPU
@@ -144,7 +147,8 @@ def main():
     dec = DecoderGraph(km).eval()
     for st in DEC_STAGES:
         if want(f"dec_{st}"):
-            export_graph(f"dec_{st}", DecoderStage(dec, st).eval(), f"dec_{st}", NPU_FRAME_BUCKETS, "L", NPU_SRC)
+            for n in NPU_FRAME_BUCKETS:
+                export_graph(f"dec_{st}_L{n}", DecoderStage(dec, st).eval(), f"dec_{st}", [n], "L", NPU_SRC)
 
 
 if __name__ == "__main__":

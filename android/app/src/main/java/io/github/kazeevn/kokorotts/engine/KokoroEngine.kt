@@ -109,13 +109,22 @@ class KokoroEngine private constructor(private val context: Context) {
 
     /**
      * EdgeTPU decoder: TPU-sized, row-folded stage graphs + last-rate row-block graphs, all
-     * AOT-compiled for the Tensor G3 (convert/aot_compile_g3.py).
+     * AOT-compiled for the Tensor G3 (convert/aot_compile_g3.py). Stages come as one graph per
+     * frame bucket, keyed "<stage>.L<n>": the dispatch library loads a compiled file's whole
+     * bytecode into DMA-BUF once per signature, so five buckets in one file took 5x the memory.
      */
     private fun loadNpuDecoder(): Map<String, Graph> {
         val graphs = LinkedHashMap<String, Graph>()
         try {
-            for (st in decStages) graphs[st] = Graph(context, "dec_$st", Backend.NPU, THREADS)
-            for (b in finalBlocks) graphs["blk_$b"] = Graph(context, "blk_$b", Backend.NPU, THREADS)
+            var dma = DmaBufStats.mb()
+            fun loaded(name: String) {
+                val now = DmaBufStats.mb()
+                Log.i(TAG, "NPU $name: +${now - dma} MB DMA-BUF (total $now MB)")
+                dma = now
+            }
+            for (st in decStages) for (n in npuFrameBuckets)
+                graphs["$st.L$n"] = Graph(context, "dec_${st}_L$n", Backend.NPU, THREADS).also { loaded("dec_${st}_L$n") }
+            for (b in finalBlocks) graphs["blk_$b"] = Graph(context, "blk_$b", Backend.NPU, THREADS).also { loaded("blk_$b") }
         } catch (e: Throwable) {
             graphs.values.forEach { it.close() }
             throw e
@@ -419,7 +428,7 @@ class KokoroEngine private constructor(private val context: Context) {
     }
 
     private fun runStage(dec: Map<String, Graph>, name: String, sig: String, ins: List<ByteBuffer>, outs: List<ByteBuffer>) =
-        dec.getValue(name).run(sig, ins, outs)
+        dec.getValue("$name.$sig").run(sig, ins, outs)
 
     private fun runNpuDecoder(
         dec: Map<String, Graph>, sig: String, H: Int, asr: ByteBuffer, fnB: ByteBuffer, harB: ByteBuffer,

@@ -23,6 +23,7 @@ import kotlin.concurrent.thread
  *
  *   adb shell am start-foreground-service -n io.github.kazeevn.kokorotts/.BenchService \
  *       --es backend NPU --ei repeats 3 --ei settle_s 20 --es tag npu1 [--es mode idle --ei idle_s 60]
+ *   compare mode (NPU vs CPU decoder): --es mode compare [--ez check true] [--es text "..."]
  *
  * Phases are timestamped with CLOCK_BOOTTIME (= Perfetto's default trace clock) in
  * <external files>/results/bench_<tag>.json, so the host can integrate power-rail energy per phase.
@@ -60,7 +61,7 @@ class BenchService : Service() {
                     // NPU vs CPU decoder on identical inputs: two passes with the same chunking
                     // (CPU capped at the NPU's largest bucket), so both decoders are never loaded at once.
                     val engine = KokoroEngine.get(this)
-                    val corpus = assets.open("bench_corpus.txt").bufferedReader().readText()
+                    val corpus = intent?.getStringExtra("text") ?: assets.open("bench_corpus.txt").bufferedReader().readText()
                     fun pass(): List<FloatArray> {
                         val chunks = ArrayList<FloatArray>()
                         engine.synthesize(corpus, voice, 1f, AtomicBoolean(false)) { chunks.add(it.audio); true }
